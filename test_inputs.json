@@ -1,0 +1,14 @@
+{
+  "Sweep_Measurement": {
+    "run": true,
+    "range": {
+      "start_ghz": 2.0,
+      "stop_ghz": 5.0,
+      "step_mhz": 100,
+      "power_dbm": -40.0,
+      "tolerence_db": 0.1,
+      "expected_gain_db": 0.0,
+      "k575_averages": [5, 10, 15, 20, 50, 100]
+    }
+  }
+}
