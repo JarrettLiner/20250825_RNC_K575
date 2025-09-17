@@ -102,7 +102,7 @@ def run_sweep():
 
         pm.configure(initial_freq, input_offset, output_offset)
         initial_power = target_output - expected_gain
-        vsg.configure(initial_freq, initial_power)
+        vsg.configure(initial_freq, initial_power, vsg_offset)
         vsa.configure(initial_freq, vsa_offset)
 
         logger.info(f"Starting sweep over {len(freqs)} frequencies")
@@ -132,6 +132,7 @@ def run_sweep():
 
             # Servo input power to reach target output
             servo_iterations, servo_settle_time = power_servo.servo_power(freq_ghz, target_output, expected_gain)
+            #  servo_iterations, servo_settle_time = 0, 0.0
 
             # Measure
             corrected_input, corrected_output = pm.measure()

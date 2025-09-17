@@ -14,7 +14,7 @@ class VSA:
             self.instr.write('*RST')
             self.instr.query('*OPC?')
             self.instr.query('MMEM:SEL:ITEM:HWS ON; *OPC?')
-            self.instr.query(r'MMEM:LOAD:STAT 1,"C:\R_S\instr\user\Qorvo\5GNR_UL_10MHz_256QAM_30kHz_24RB_0RBO"; *OPC?')
+            self.instr.query(r'MMEM:LOAD:STAT 1,"C:\R_S\instr\user\Qorvo\5GNR_UL_10MHz_256QAM_30kHz_24RB_0RBO_fullframe"; *OPC?')
             self.instr.query(':SENS:ADJ:LEV; *OPC?')
             self.instr.query(':SENS:ADJ:EVM; *OPC?')
             '''
@@ -27,12 +27,11 @@ class VSA:
             '''
             self.instr.query('CONF:GEN:CONN:STAT ON; *OPC?')
             self.instr.query('CONF:GEN:CONT:STAT ON; *OPC?')
+            self.instr.query('CONF:GEN:POW:LEV:STAT ON; *OPC?')
             self.instr.query('CONF:GEN:RFO:STAT ON; *OPC?')
             self.instr.query('CONF:SETT:RF; *OPC?')
             self.instr.query('CONF:SETT:NR5G; *OPC?')
-            '''
             self.instr.query(':TRIG:SEQ:SOUR EXT; *OPC?')
-            '''
             self.instr.query('INIT:IMM; *OPC?')
             self.setup_time = time() - start_time
             logger.info(f"VSA initialized in {self.setup_time:.3f}s")
@@ -78,6 +77,7 @@ class VSA:
 
             self.instr.query(f':SENS:FREQ:CENT {freq_str}; *OPC?')
             self.instr.write(f':DISP:WIND:TRAC:Y:SCAL:RLEV:OFFS {vsa_offset:.2f}')
+            self.instr.query('CONF:SETT:RF; *OPC?')
             self.instr.query('CONF:SETT:NR5G; *OPC?')
             self.instr.query(':SENS:ADJ:LEV; *OPC?')
             self.instr.query(':SENS:ADJ:EVM; *OPC?')
@@ -114,7 +114,7 @@ class VSA:
 
     def measure_K575_evm(self, freq_str, vsa_offset, avg):
         try:
-            start_time = time()
+
             '''
             self.instr.query(f':SENS:FREQ:CENT {freq_str}; *OPC?')
             self.instr.write(f':DISP:WIND:TRAC:Y:SCAL:RLEV:OFFS {vsa_offset:.2f}')
@@ -124,10 +124,11 @@ class VSA:
             self.instr.query('CONF:GEN:CONN:STAT ON; *OPC?')
             self.instr.query('CONF:GEN:CONT:STAT ON; *OPC?')
             self.instr.query('CONF:GEN:RFO:STAT ON; *OPC?')
+            '''
             self.instr.query('CONF:SETT:RF; *OPC?')
             self.instr.query('CONF:SETT:NR5G; *OPC?')
-            '''
             self.instr.query('SENS:ADJ:NCAN:AVER:STAT ON; *OPC?')
+            start_time = time()
             self.instr.query(f'SENS:ADJ:NCAN:AVER:COUN {avg}; *OPC?')
             self.instr.query('INIT:IMM; *OPC?')
             k575_evm = self.queryFloat('FETC:CC1:ISRC:FRAM:SUMM:EVM:ALL:AVERage?')
@@ -143,6 +144,7 @@ class VSA:
             k575_aclr_time = time() - start_time
             self.instr.write('CONF:NR5G:MEAS EVM')
             self.instr.query('SENS:ADJ:NCAN:AVER:STAT OFF; *OPC?')
+            print(f"K575 EVM measurement with {avg} averages: EVM={k575_evm}, Time={evm_measure_time}")
             logger.info(f"K575 EVM measurement with {avg} averages: EVM={k575_evm}, Time={evm_measure_time}, "
                         f"Channel Power={k575_chan_pow}, Lower Adjacent={k575_adj_lower}, Upper Adjacent={k575_adj_upper}, ACLR Time={k575_aclr_time}")
             return k575_evm, evm_measure_time, k575_chan_pow, k575_adj_lower, k575_adj_upper, k575_aclr_time

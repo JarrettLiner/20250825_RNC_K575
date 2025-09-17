@@ -1,5 +1,7 @@
 import logging
+from asyncio import wait_for
 from time import time
+from time import sleep
 
 class PowerServo:
     def __init__(self, vsg, pm, vsa, max_iterations=10, tolerance=0.1):
@@ -32,12 +34,23 @@ class PowerServo:
         Returns:
             tuple: (servo_iterations, servo_settle_time)
         """
+        # Measure initial DUT gain
+        #  expected_gain = self.pm.measure()[1] - self.pm.measure()[0]
+        expected_gain = round(expected_gain, 3)
+        self.logger.info(f"Measured gain in dB: {expected_gain:.3f}")
+
         initial_pwr = target_output - expected_gain
+        print(f"Initial power set to {initial_pwr} dBm to achieve target output of {target_output} dBm with expected gain of {expected_gain} dB")
+        self.vsa.instr.query(f'CONF:GEN:POW:LEV {initial_pwr}; *OPC?')
+        self.vsa.instr.query(f'CONF:GEN:POW:LEV {initial_pwr}; *OPC?')
+
+        #  self.vsg.set_power(initial_pwr)
         servo_start_time = time()
         servo_iterations = 0
         servo_settle_time = None
 
         for i in range(self.max_iterations):
+            #  self.power_meter.instr.write('INIT1; *WAI; INIT2; *WAI')  # Trigger measurement
             _, current_output = self.pm.measure()
             servo_iterations = i + 1
             if abs(current_output - target_output) < self.tolerance:
@@ -47,10 +60,13 @@ class PowerServo:
                 break
             adjustment = target_output - current_output
             initial_pwr += adjustment
-            self.vsg.set_power(initial_pwr)
+            self.vsa.instr.query(f'CONF:GEN:POW:LEV {initial_pwr}; *OPC?')
+            self.vsa.instr.query(f'CONF:GEN:POW:LEV {initial_pwr}; *OPC?')
+            #  self.vsg.set_power(initial_pwr)
         else:
             servo_settle_time = round(time() - servo_start_time, 3)
             self.logger.warning(
                 f"Servo did not converge within {self.max_iterations} iterations at {freq_ghz} GHz (Time: {servo_settle_time} s)")
 
+        print(f"servo settle time: {servo_settle_time}s over {servo_iterations} iterations")
         return servo_iterations, servo_settle_time
